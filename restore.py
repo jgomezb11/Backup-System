@@ -21,8 +21,11 @@ def join_parts(parts_dir):
     with open(output_path, 'wb') as outfile:
         for i in range(0, len(os.listdir(parts_dir))):
             part_path = os.path.join(parts_dir, f'part{i:04}.bin')
+            key_path = os.path.join('./test/output/keys/', f'key{i:04}.key')
+            with open(key_path, 'rb') as key_file:
+                key_data = key_file.read()
             with open(part_path, 'rb') as part_file:
-                outfile.write(part_file.read())
+                outfile.write(decrypt_part(part_file.read(), key_data))
     return output_path
 
 

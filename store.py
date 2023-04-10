@@ -2,7 +2,11 @@ import sys
 import os
 import tarfile
 import gzip
+import json
 from cryptography.fernet import Fernet
+
+
+data = {}
 
 def main():
     # Toma los argumentos de línea de comandos y los asigna a variables
@@ -25,6 +29,10 @@ def main():
     # Divide el archivo cifrado en partes de 512 MB y las guarda en una carpeta
     split_file(encrypt_tar_path)
     print('Partitioned Successfully.')
+
+    json_path = './test/output/data.json'
+    with open(json_path, 'w') as f:
+        json.dump(data, f, indent=4)
 
 
 def encrypt_tar_contents(tar_path):
@@ -49,11 +57,14 @@ def encrypt_tar_contents(tar_path):
 
 
 def generateTarfile(input_path, output_path):
+    global data
+    data['files'] = []
     tar_path = output_path + 'temp_.tar.gz'
 
     tar = tarfile.open(tar_path, "w:gz")
     for input_file in os.scandir(input_path):
         tar.add(input_file.path)
+        data['files'].append({'name':input_file.name, 'size':f'{os.path.getsize(input_file.path)} bytes'})
     tar.close()
 
     print('Tarfile generated in', tar_path)
@@ -61,37 +72,26 @@ def generateTarfile(input_path, output_path):
     return tar_path
 
 
-def encrypt_part(chunk, chunk_file_path):
-    # part_dest_folder = './test/output/encrypted_parts/'
-    # key_dest_folder = './test/output/keys/'
+def encrypt_part(chunk, index):
+    key_dest_folder = './test/output/keys/'
     key = Fernet.generate_key()
 
     fernet = Fernet(key)
-    with open(chunk_file_path, 'rb') as original_chunk:
-        original_chunk_data = original_chunk.read()
-    encrypted_data = fernet.encrypt(original_chunk_data)
+    encrypted_data = fernet.encrypt(chunk)
 
-    # part_index = chunk_file_path.rindex('part')
-    # index_bin = chunk_file_path.index('.bin')
-    # part_name = chunk_file_path[part_index:index_bin]
-    # encrypted_chunk_file_path = os.path.join(part_dest_folder, f'encrypted_{part_name}.bin')
+    chunk_key_path = os.path.join(key_dest_folder, f'key{index:04}.key')
+    with open(chunk_key_path, 'wb') as key_file:
+        key_file.write(key)
 
-    # with open(encrypted_chunk_file_path, 'wb') as encrypted_chunck:
-    #     encrypted_chunck.write(encrypted_data)
-
-
-    # chunk_key_path = os.path.join(key_dest_folder, f'{part_name}.key')
-    # with open(chunk_key_path, 'wb') as key_file:
-    #     key_file.write(key)
-
-    # return encrypted_chunk_file_path, chunk_key_path
-
-    return encrypted_data, key
+    return encrypted_data, chunk_key_path
 
 
 def split_file(source_path):
-    chunk_size=512 * 1024 * 1024
+    global data
+    data['keys_path'] = './test/output/keys/'
     dest_folder = './test/output/parts/'
+    data['parts_path'] = dest_folder
+    chunk_size=512 * 1024 * 1024
     with open(source_path, 'rb') as source_file:
         index = 0
         while True:
@@ -100,8 +100,10 @@ def split_file(source_path):
                 break
             chunk_file_path = os.path.join(dest_folder, f'part{index:04}.bin')
             with open(chunk_file_path, 'wb') as chunk_file:
-                chunk_file.write(chunk)
+                chunk_file.write(encrypt_part(chunk, index)[0])
+
             index += 1
+    data['total_parts'] = index
 
 
 if __name__ == '__main__':
