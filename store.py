@@ -62,7 +62,8 @@ def generateTarfile(input_path, output_path):
 
 
 def encrypt_part(chunk, chunk_file_path):
-    dest_folder = './test/output/encrypted_parts/'
+    # part_dest_folder = './test/output/encrypted_parts/'
+    # key_dest_folder = './test/output/keys/'
     key = Fernet.generate_key()
 
     fernet = Fernet(key)
@@ -71,11 +72,19 @@ def encrypt_part(chunk, chunk_file_path):
     encrypted_data = fernet.encrypt(original_chunk_data)
 
     # part_index = chunk_file_path.rindex('part')
-    # part_name = chunk_file_path[part_index]
-    # encrypted_chunk_file_path = os.path.join(dest_folder, f'encrypted_{part_name}')
+    # index_bin = chunk_file_path.index('.bin')
+    # part_name = chunk_file_path[part_index:index_bin]
+    # encrypted_chunk_file_path = os.path.join(part_dest_folder, f'encrypted_{part_name}.bin')
 
     # with open(encrypted_chunk_file_path, 'wb') as encrypted_chunck:
     #     encrypted_chunck.write(encrypted_data)
+
+
+    # chunk_key_path = os.path.join(key_dest_folder, f'{part_name}.key')
+    # with open(chunk_key_path, 'wb') as key_file:
+    #     key_file.write(key)
+
+    # return encrypted_chunk_file_path, chunk_key_path
 
     return encrypted_data, key
 

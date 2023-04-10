@@ -25,13 +25,22 @@ def join_parts(parts_dir):
                 outfile.write(part_file.read())
     return output_path
 
+
+def decrypt_part(encrypted_data, key):
+    fernet = Fernet(key)
+    original_chunk = fernet.decrypt(encrypted_data)
+
+    return original_chunk
+
+
 def decrypt_tar_contents(cipher_path, key_path):
+    decrypt_tar_file_path =' ./test/output/archivo_descifrado.tar.gz'
     with open(key_path, 'rb') as key_file:
         key = key_file.read()
 
     with gzip.open(cipher_path, 'rb') as backup:
         fernet = Fernet(key)
-        with tarfile.open('./test/output/archivo_descifrado.tar.gz', 'w:gz') as tar:
+        with tarfile.open(decrypt_tar_file_path, 'w:gz') as tar:
             for line in backup:
                 filename = line.decode('utf-8').strip()
                 encrypted_data = backup.readline().strip()
@@ -39,6 +48,14 @@ def decrypt_tar_contents(cipher_path, key_path):
                 info = tarfile.TarInfo(name=filename)
                 info.size = len(original_data)
                 tar.addfile(info, fileobj=io.BytesIO(original_data))
+    
+    return decrypt_tar_file_path
+
+
+def decompress_tar(decrypt_tar_file, output_path):
+    with tarfile.open(decrypt_tar_file, 'r') as tar:
+        tar.extractall(path=output_path)
+
 
 if __name__ == '__main__':
     main()
