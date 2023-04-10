@@ -13,6 +13,7 @@ def main():
 
     print('Restore process started...')
     decrypt_tar_contents(cipher_path, key_path)
+    print('Restored successfully.')
 
 
 def join_parts(parts_dir):

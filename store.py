@@ -61,6 +61,25 @@ def generateTarfile(input_path, output_path):
     return tar_path
 
 
+def encrypt_part(chunk, chunk_file_path):
+    dest_folder = './test/output/encrypted_parts/'
+    key = Fernet.generate_key()
+
+    fernet = Fernet(key)
+    with open(chunk_file_path, 'rb') as original_chunk:
+        original_chunk_data = original_chunk.read()
+    encrypted_data = fernet.encrypt(original_chunk_data)
+
+    # part_index = chunk_file_path.rindex('part')
+    # part_name = chunk_file_path[part_index]
+    # encrypted_chunk_file_path = os.path.join(dest_folder, f'encrypted_{part_name}')
+
+    # with open(encrypted_chunk_file_path, 'wb') as encrypted_chunck:
+    #     encrypted_chunck.write(encrypted_data)
+
+    return encrypted_data, key
+
+
 def split_file(source_path):
     chunk_size=512 * 1024 * 1024
     dest_folder = './test/output/parts/'
