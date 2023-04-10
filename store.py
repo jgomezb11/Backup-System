@@ -23,11 +23,11 @@ def main():
     tar_path = generateTarfile(input_path, output_path)
 
     # Cifra el archivo tar.gz generado y devuelve su ruta
-    encrypt_tar_path = encrypt_tar_contents(tar_path, output_path)
+    # encrypt_tar_path = encrypt_tar_contents(tar_path, output_path)
     print('Encrypted successfully. Starting Partitioning')
 
     # Divide el archivo cifrado en partes de 512 MB y las guarda en una carpeta
-    split_file(encrypt_tar_path, output_path)
+    split_file(tar_path, output_path)
     print('Partitioned Successfully.')
 
     json_path = output_path + 'data.json'
@@ -35,29 +35,29 @@ def main():
         json.dump(data, f, indent=4)
 
 
-def encrypt_tar_contents(tar_path, output_path):
-    global data
-    dest_path = output_path + 'archivo_cifrado.tar.gz'
-    key_path = output_path + 'clave.key'
+# def encrypt_tar_contents(tar_path, output_path):
+#     global data
+#     dest_path = output_path + 'archivo_cifrado.tar.gz'
+#     key_path = output_path + 'clave.key'
 
-    key = Fernet.generate_key()
-    with tarfile.open(tar_path, 'r:gz') as tar:
-        with gzip.open(dest_path, 'wb') as backup:
-            fernet = Fernet(key)
-            for member in tar:
-                original_file = tar.extractfile(member)
-                original_data = original_file.read()
-                encrypted_data = fernet.encrypt(original_data)
-                backup.write(os.path.basename(member.name).encode('utf-8'))
-                backup.write(b'\n')
-                backup.write(encrypted_data)
-                backup.write(b'\n')
+#     key = Fernet.generate_key()
+#     with tarfile.open(tar_path, 'r:gz') as tar:
+#         with gzip.open(dest_path, 'wb') as backup:
+#             fernet = Fernet(key)
+#             for member in tar:
+#                 original_file = tar.extractfile(member)
+#                 original_data = original_file.read()
+#                 encrypted_data = fernet.encrypt(original_data)
+#                 backup.write(os.path.basename(member.name).encode('utf-8'))
+#                 backup.write(b'\n')
+#                 backup.write(encrypted_data)
+#                 backup.write(b'\n')
 
-    with open(key_path, 'wb') as key_file:
-        key_file.write(key)
-    data["tar_key"] = key_path
-    os.remove(tar_path)
-    return dest_path
+#     with open(key_path, 'wb') as key_file:
+#         key_file.write(key)
+#     data["tar_key"] = key_path
+#     os.remove(tar_path)
+#     return dest_path
 
 
 def generateTarfile(input_path, output_path):
