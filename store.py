@@ -5,59 +5,55 @@ import gzip
 import json
 from cryptography.fernet import Fernet
 
-
+full_data = []
 data = {}
 
 def main():
+    global data, full_data
     # Toma los argumentos de línea de comandos y los asigna a variables
     input_path = sys.argv[1]
     output_path = sys.argv[2]
+    backup_name = sys.argv[3]
+    if len(sys.argv) > 4:
+        json_path = sys.argv[4]
+        with open(json_path, "r") as json_file:
+            full_data = json.load(json_file)
+        if is_repeated_name(full_data, backup_name):
+            raise ValueError('That name is already used.')
+    else:
+        json_path = output_path + 'data.json'
 
+    data['backup_id'] = backup_name
     # Verifica que la ruta de salida sea una carpeta
-    if not os.path.isdir(input_path) or not os.path.isdir(output_path):
-        raise ValueError('Algun path no es una carpeta')
+    if not os.path.isdir(input_path):
+        raise ValueError('Input path is not a valid directory.')
+
+    if not os.path.exists(output_path):
+        os.makedirs(output_path)
 
     # Inicio del proceso de backup
     print('Backup process started...')
     # Genera el archivo tar.gz y devuelve su ruta
     tar_path = generateTarfile(input_path, output_path)
 
-    # Cifra el archivo tar.gz generado y devuelve su ruta
-    # encrypt_tar_path = encrypt_tar_contents(tar_path, output_path)
-    print('Encrypted successfully. Starting Partitioning')
+    print('Zipped successfully. Starting Partitioning')
 
     # Divide el archivo cifrado en partes de 512 MB y las guarda en una carpeta
     split_file(tar_path, output_path)
     print('Partitioned Successfully.')
 
-    json_path = output_path + 'data.json'
+
+    full_data.append(data)
     with open(json_path, 'w') as f:
-        json.dump(data, f, indent=4)
+        json.dump(full_data, f, indent=4)
 
 
-# def encrypt_tar_contents(tar_path, output_path):
-#     global data
-#     dest_path = output_path + 'archivo_cifrado.tar.gz'
-#     key_path = output_path + 'clave.key'
-
-#     key = Fernet.generate_key()
-#     with tarfile.open(tar_path, 'r:gz') as tar:
-#         with gzip.open(dest_path, 'wb') as backup:
-#             fernet = Fernet(key)
-#             for member in tar:
-#                 original_file = tar.extractfile(member)
-#                 original_data = original_file.read()
-#                 encrypted_data = fernet.encrypt(original_data)
-#                 backup.write(os.path.basename(member.name).encode('utf-8'))
-#                 backup.write(b'\n')
-#                 backup.write(encrypted_data)
-#                 backup.write(b'\n')
-
-#     with open(key_path, 'wb') as key_file:
-#         key_file.write(key)
-#     data["tar_key"] = key_path
-#     os.remove(tar_path)
-#     return dest_path
+def is_repeated_name(full_data, backup_name):
+    exist = False
+    for backup in full_data:
+        if backup['backup_id'] == backup_name:
+            exist = True
+    return exist
 
 
 def generateTarfile(input_path, output_path):
@@ -73,7 +69,7 @@ def generateTarfile(input_path, output_path):
         dir_name = input_path[index_last_slash + 1:]
     data["dir_name"] = dir_name
     for input_file in os.scandir(input_path):
-        tar.add(input_file.path)
+        tar.add(input_file.path, arcname=os.path.basename(input_file.path))
         data['files'].append({'name':input_file.name, 'size':f'{os.path.getsize(input_file.path)} bytes'})
     tar.close()
 

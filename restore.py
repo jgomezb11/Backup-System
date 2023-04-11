@@ -6,23 +6,35 @@ import sys
 import os
 import json
 
+full_data = []
 data = {}
 
 def main():
-    global data
+    global data, full_data
     restore_path = sys.argv[1]
     json_path = sys.argv[2]
+    backup_name = sys.argv[3]
 
     # Cargo las rutas que se almacenan en el json
     with open(json_path, "r") as json_file:
-        data = json.load(json_file)
+        full_data = json.load(json_file)
 
+    data = find_backup(full_data, backup_name)
     # Une las partes del archivo cifrado y genera el archivo original
     print('Restore process started...')
     cipher_path = join_parts(data['parts_path'], restore_path)
-    # decrypt_file = decrypt_tar_contents(cipher_path, data['tar_key'], restore_path)
     print('Restored successfully.')
     decompress_tar(cipher_path, restore_path)
+
+
+def find_backup(full_data, backup_name):
+    return_data = None
+    for backup in full_data:
+        if backup['backup_id'] == backup_name:
+            return_data = backup
+    if not return_data:
+        raise ValueError("The backup name that you specified doesn't exist...")
+    return return_data
 
 
 def join_parts(parts_dir, restore_path):
@@ -43,25 +55,6 @@ def decrypt_part(encrypted_data, key):
     fernet = Fernet(key)
     original_chunk = fernet.decrypt(encrypted_data)
     return original_chunk
-
-
-# def decrypt_tar_contents(cipher_path, key_path, restore_path):
-#     decrypt_tar_file_path = restore_path + 'archivo_descifrado.tar.gz'
-#     with open(key_path, 'rb') as key_file:
-#         key = key_file.read()
-
-#     with gzip.open(cipher_path, 'rb') as backup:
-#         fernet = Fernet(key)
-#         with tarfile.open(decrypt_tar_file_path, 'w:gz') as tar:
-#             for line in backup:
-#                 filename = line.decode('utf-8').strip()
-#                 encrypted_data = backup.readline().strip()
-#                 original_data = fernet.decrypt(encrypted_data)
-#                 info = tarfile.TarInfo(name=filename)
-#                 info.size = len(original_data)
-#                 tar.addfile(info, fileobj=io.BytesIO(original_data))
-#     os.remove(cipher_path)
-#     return decrypt_tar_file_path
 
 
 def decompress_tar(decrypt_tar_file, output_path):
